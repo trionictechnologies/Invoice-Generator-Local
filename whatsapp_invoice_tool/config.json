@@ -1,0 +1,50 @@
+{
+  "excel_path": "invoices.xlsx",
+  "company": {
+    "name": "Acme Accounting Services",
+    "address": "123 MG Road, Bengaluru, KA 560001",
+    "phone": "+91-9876543210",
+    "email": "accounts@acme.example"
+  },
+  "message_template": "Dear {{ CustomerName }}, please find your invoice {{ InvoiceNo }} dated {{ InvoiceDate }} for \u20b9{{ Amount }} attached. \u2013 {{ company.name }}",
+  "invoice": {
+    "output_dir": "invoices_output",
+    "template_path": "templates/invoice.html",
+    "currency_symbol": "\u20b9"
+  },
+  "whatsapp": {
+    "user_data_dir": "playwright_profile",
+    "send_delay_seconds": {
+      "min": 3,
+      "max": 6
+    },
+    "navigation_timeout_ms": 45000,
+    "message_input_selector": \"div[contenteditable='true'][data-tab='10']\",
+    "attach_button_selector": \"span[data-icon='clip']\",
+    "document_input_selector": \"input[type='file']\",
+    "send_button_selector": \"span[data-icon='send']\"
+  },
+  "columns": {
+    "InvoiceNo": "A",
+    "CustomerName": "B",
+    "PhoneNumber": "C",
+    "Amount": "D",
+    "InvoiceDate": "E",
+    "Status": "F",
+    "PaymentReceived": "G"
+  },
+  "payment_keywords": [
+    "paid",
+    "payment done",
+    "sent",
+    "done",
+    "upi",
+    "imps",
+    "rtgs",
+    "neft"
+  ],
+  "logging": {
+    "file": "logs/app.log",
+    "level": "INFO"
+  }
+}
