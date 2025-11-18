@@ -1,0 +1,43 @@
+{
+  "default_excel_path": "",
+  "company_info": {
+    "CompanyName": "Your Company Name",
+    "CompanyAddress": "Address Line 1, Address Line 2",
+    "CompanyCity": "City, State - PIN Code",
+    "CompanyPhone": "+91 XXXXXXXXXX",
+    "CompanyEmail": "info@yourcompany.com",
+    "CompanyGSTIN": "GSTIN Number (if applicable)",
+    "BankName": "Your Bank Name",
+    "AccountNumber": "XXXXXXXXXXXX",
+    "IFSCCode": "XXXXXX",
+    "UPIID": "yourupi@bank"
+  },
+  "message_template": "Dear {CustomerName}, please find your invoice {InvoiceNo} dated {InvoiceDate} for ₹{Amount} attached. - {FirmName}",
+  "column_indices": {
+    "invoice_no": 1,
+    "customer_name": 2,
+    "phone_number": 3,
+    "amount": 4,
+    "invoice_date": 5,
+    "status": 6,
+    "payment_received": 7
+  },
+  "send_delay": 4,
+  "page_load_timeout": 60000,
+  "messages_to_check": 5,
+  "payment_keywords": [
+    "paid",
+    "payment done",
+    "payment completed",
+    "sent",
+    "done",
+    "upi",
+    "imps",
+    "rtgs",
+    "neft",
+    "transferred",
+    "transaction",
+    "successful",
+    "credited"
+  ]
+}
