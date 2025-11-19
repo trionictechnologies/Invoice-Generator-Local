@@ -1,0 +1,37 @@
+{
+  "default_excel_path": "",
+  "data_sheet_name": "InvoiceData",
+  "mapping_sheet_name": "ColumnMapping",
+  "invoice_template": "gst_invoice.html",
+  "company_info": {
+    "CompanyName": "Your Company Name",
+    "CompanyAddress": "Address Line 1, Address Line 2",
+    "CompanyCity": "City, State - PIN Code",
+    "CompanyPhone": "+91 XXXXXXXXXX",
+    "CompanyEmail": "info@yourcompany.com",
+    "CompanyGSTIN": "GSTIN Number (if applicable)",
+    "BankName": "Your Bank Name",
+    "AccountNumber": "XXXXXXXXXXXX",
+    "IFSCCode": "XXXXXX",
+    "UPIID": "yourupi@bank"
+  },
+  "message_template": "Dear {CustomerName}, please find your Proforma Invoice {InvoiceNumber} dated {InvoiceDate} for ₹{Amount}. Thank you for your business. - {FirmName}",
+  "send_delay": 4,
+  "page_load_timeout": 60000,
+  "messages_to_check": 5,
+  "payment_keywords": [
+    "paid",
+    "payment done",
+    "payment completed",
+    "sent",
+    "done",
+    "upi",
+    "imps",
+    "rtgs",
+    "neft",
+    "transferred",
+    "transaction",
+    "successful",
+    "credited"
+  ]
+}

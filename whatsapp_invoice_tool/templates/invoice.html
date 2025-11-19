@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{ InvoiceNo }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            border: 1px solid #ddd;
+            padding: 30px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 20px;
+        }
+        
+        .company-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .company-details {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .invoice-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #2c3e50;
+        }
+        
+        .invoice-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .info-section {
+            flex: 1;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+        }
+        
+        .invoice-table th {
+            background-color: #2c3e50;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+        
+        .invoice-table td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .invoice-table tr:last-child td {
+            border-bottom: 2px solid #2c3e50;
+        }
+        
+        .total-section {
+            text-align: right;
+            margin-top: 20px;
+        }
+        
+        .total-label {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .total-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-top: 5px;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .notes {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #2c3e50;
+        }
+        
+        .notes-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Header with Company Info -->
+        <div class="header">
+            <div class="company-name">{{ CompanyName | default("Your Company Name") }}</div>
+            <div class="company-details">
+                {{ CompanyAddress | default("Company Address Line 1, Address Line 2") }}<br>
+                {{ CompanyCity | default("City, State - PIN") }}<br>
+                Phone: {{ CompanyPhone | default("+91 XXXXXXXXXX") }}<br>
+                Email: {{ CompanyEmail | default("info@company.com") }}<br>
+                {% if CompanyGSTIN %}GSTIN: {{ CompanyGSTIN }}{% endif %}
+            </div>
+        </div>
+        
+        <!-- Invoice Title -->
+        <div class="invoice-title">TAX INVOICE</div>
+        
+        <!-- Invoice and Customer Info -->
+        <div class="invoice-info">
+            <div class="info-section">
+                <div class="info-label">Bill To:</div>
+                <div class="info-value">
+                    <strong>{{ CustomerName }}</strong><br>
+                    {% if CustomerAddress %}{{ CustomerAddress }}<br>{% endif %}
+                    Phone: {{ PhoneNumber }}
+                </div>
+            </div>
+            
+            <div class="info-section" style="text-align: right;">
+                <div class="info-label">Invoice Details:</div>
+                <div class="info-value">
+                    <strong>Invoice No:</strong> {{ InvoiceNo }}<br>
+                    <strong>Date:</strong> {{ InvoiceDate }}<br>
+                    {% if DueDate %}<strong>Due Date:</strong> {{ DueDate }}<br>{% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Invoice Items Table -->
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%;">#</th>
+                    <th style="width: 50%;">Description</th>
+                    <th style="width: 10%;">Qty</th>
+                    <th style="width: 15%;">Rate</th>
+                    <th style="width: 15%;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>{{ ItemDescription | default("Services Rendered") }}</td>
+                    <td>{{ Quantity | default("1") }}</td>
+                    <td>₹{{ "%.2f"|format(Rate|default(Amount)|float) }}</td>
+                    <td>₹{{ "%.2f"|format(Amount|float) }}</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Total Section -->
+        <div class="total-section">
+            <div class="total-label">Total Amount:</div>
+            <div class="total-amount">{{ AmountFormatted }}</div>
+        </div>
+        
+        <!-- Payment Notes -->
+        <div class="notes">
+            <div class="notes-title">Payment Information:</div>
+            Bank Name: {{ BankName | default("Your Bank Name") }}<br>
+            Account No: {{ AccountNumber | default("XXXXXXXXXXXX") }}<br>
+            IFSC Code: {{ IFSCCode | default("XXXXXX") }}<br>
+            UPI ID: {{ UPIID | default("yourupi@bank") }}
+        </div>
+        
+        <!-- Terms and Conditions -->
+        {% if TermsAndConditions %}
+        <div class="notes" style="margin-top: 15px;">
+            <div class="notes-title">Terms & Conditions:</div>
+            {{ TermsAndConditions }}
+        </div>
+        {% endif %}
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Thank you for your business!</p>
+            <p>This is a computer-generated invoice and does not require a signature.</p>
+        </div>
+    </div>
+</body>
+</html>
