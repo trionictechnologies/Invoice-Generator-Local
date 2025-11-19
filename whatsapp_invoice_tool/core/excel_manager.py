@@ -1,6 +1,7 @@
 """
 Excel Manager for WhatsApp Invoice Tool.
-Handles reading and writing invoice data from Excel files.
+Handles reading and writing invoice data from Excel files with multi-sheet support.
+Supports GST invoice format with column mapping.
 """
 import openpyxl
 from typing import List, Dict, Optional
@@ -10,16 +11,7 @@ from .logger import logger
 
 
 class ExcelManager:
-    """Manages Excel file operations for invoice data."""
-    
-    # Default column indices (1-based, as used by openpyxl)
-    COL_INVOICE_NO = 1      # A
-    COL_CUSTOMER_NAME = 2   # B
-    COL_PHONE_NUMBER = 3    # C
-    COL_AMOUNT = 4          # D
-    COL_INVOICE_DATE = 5    # E
-    COL_STATUS = 6          # F
-    COL_PAYMENT_RECEIVED = 7 # G
+    """Manages Excel file operations for invoice data with multi-sheet support."""
     
     def __init__(self, file_path: str, config: Optional[Dict] = None):
         """
@@ -27,35 +19,105 @@ class ExcelManager:
         
         Args:
             file_path: Path to the Excel file
-            config: Optional configuration dict with column indices
+            config: Optional configuration dict
         """
         self.file_path = Path(file_path)
         
         if not self.file_path.exists():
             raise FileNotFoundError(f"Excel file not found: {file_path}")
         
-        # Load column config if provided
-        if config and "column_indices" in config:
-            col_config = config["column_indices"]
-            self.COL_INVOICE_NO = col_config.get("invoice_no", self.COL_INVOICE_NO)
-            self.COL_CUSTOMER_NAME = col_config.get("customer_name", self.COL_CUSTOMER_NAME)
-            self.COL_PHONE_NUMBER = col_config.get("phone_number", self.COL_PHONE_NUMBER)
-            self.COL_AMOUNT = col_config.get("amount", self.COL_AMOUNT)
-            self.COL_INVOICE_DATE = col_config.get("invoice_date", self.COL_INVOICE_DATE)
-            self.COL_STATUS = col_config.get("status", self.COL_STATUS)
-            self.COL_PAYMENT_RECEIVED = col_config.get("payment_received", self.COL_PAYMENT_RECEIVED)
+        self.config = config or {}
+        self.column_mapping = {}
+        self.data_sheet_name = self.config.get("data_sheet_name", "InvoiceData")
+        self.mapping_sheet_name = self.config.get("mapping_sheet_name", "ColumnMapping")
+        
+        # Load column mapping from Excel or use defaults
+        self._load_column_mapping()
+    
+    def _load_column_mapping(self):
+        """Load column mapping from Excel file or use default mapping."""
+        try:
+            workbook = openpyxl.load_workbook(self.file_path, data_only=True)
+            
+            # Check if mapping sheet exists
+            if self.mapping_sheet_name in workbook.sheetnames:
+                mapping_sheet = workbook[self.mapping_sheet_name]
+                logger.info(f"Loading column mapping from '{self.mapping_sheet_name}' sheet")
+                
+                # Read mapping: Column 1 = Field Name, Column 2 = Excel Column Letter
+                for row in range(2, mapping_sheet.max_row + 1):
+                    field_name = mapping_sheet.cell(row=row, column=1).value
+                    column_letter = mapping_sheet.cell(row=row, column=2).value
+                    
+                    if field_name and column_letter:
+                        # Convert column letter to index (A=1, B=2, etc.)
+                        col_index = openpyxl.utils.column_index_from_string(str(column_letter).strip().upper())
+                        self.column_mapping[str(field_name).strip()] = col_index
+                
+                logger.info(f"Loaded {len(self.column_mapping)} column mappings")
+            else:
+                logger.info(f"No mapping sheet found, using default column order")
+                # Use default sequential mapping if no mapping sheet
+                self._set_default_mapping()
+            
+            workbook.close()
+            
+        except Exception as e:
+            logger.warning(f"Error loading column mapping: {str(e)}. Using defaults.")
+            self._set_default_mapping()
+    
+    def _set_default_mapping(self):
+        """Set default column mapping (sequential from A onwards)."""
+        # Default GST invoice field mapping
+        default_fields = [
+            "Logo", "SupplierName", "SupplierAddress", "SupplierGSTIN",
+            "BuyerName", "BuyerAddress", "BuyerGSTIN", "InvoiceNumber",
+            "InvoiceDate", "Description", "SAC_HSN", "Total",
+            "CGST", "SGST", "IGST", "GrandTotal", "AmountInWords",
+            "BankDetails", "TermsOfDelivery", "OtherTerms", "SignatureField",
+            "PhoneNumber", "Status", "PaymentReceived"
+        ]
+        
+        for idx, field in enumerate(default_fields, start=1):
+            self.column_mapping[field] = idx
+    
+    def _get_field_value(self, row, field_name: str):
+        """
+        Get value for a specific field from the row.
+        
+        Args:
+            row: openpyxl row object
+            field_name: Name of the field
+            
+        Returns:
+            Cell value or None
+        """
+        col_index = self.column_mapping.get(field_name)
+        if col_index is None:
+            return None
+        
+        try:
+            return row[col_index - 1].value
+        except (IndexError, TypeError):
+            return None
     
     def load_invoices(self) -> List[Dict]:
         """
         Load all invoice rows from Excel file.
         
         Returns:
-            List of invoice dictionaries with keys: InvoiceNo, CustomerName, PhoneNumber,
-            Amount, InvoiceDate, Status, PaymentReceived, and RowNumber
+            List of invoice dictionaries with all GST invoice fields
         """
         try:
-            workbook = openpyxl.load_workbook(self.file_path)
-            sheet = workbook.active
+            workbook = openpyxl.load_workbook(self.file_path, data_only=True)
+            
+            # Try to get the data sheet, fallback to active sheet
+            if self.data_sheet_name in workbook.sheetnames:
+                sheet = workbook[self.data_sheet_name]
+                logger.info(f"Reading data from '{self.data_sheet_name}' sheet")
+            else:
+                sheet = workbook.active
+                logger.info(f"Reading data from active sheet: '{sheet.title}'")
             
             invoices = []
             
@@ -63,39 +125,75 @@ class ExcelManager:
             for row_num in range(2, sheet.max_row + 1):
                 row = sheet[row_num]
                 
-                # Read values from configured columns
-                invoice_no = self._get_cell_value(row, self.COL_INVOICE_NO)
-                customer_name = self._get_cell_value(row, self.COL_CUSTOMER_NAME)
-                phone_number = self._get_cell_value(row, self.COL_PHONE_NUMBER)
-                amount = self._get_cell_value(row, self.COL_AMOUNT)
-                invoice_date = self._get_cell_value(row, self.COL_INVOICE_DATE)
-                status = self._get_cell_value(row, self.COL_STATUS)
-                payment_received = self._get_cell_value(row, self.COL_PAYMENT_RECEIVED)
-                
-                # Skip empty rows
+                # Read invoice number to check if row is valid
+                invoice_no = self._get_field_value(row, "InvoiceNumber")
                 if not invoice_no:
                     continue
                 
-                # Convert phone number to string and clean it
+                # Read all fields
+                phone_number = self._get_field_value(row, "PhoneNumber")
+                invoice_date = self._get_field_value(row, "InvoiceDate")
+                status = self._get_field_value(row, "Status")
+                payment_received = self._get_field_value(row, "PaymentReceived")
+                
+                # Clean phone number
                 if phone_number:
                     phone_number = str(phone_number).replace(" ", "").replace("-", "").replace("+", "")
                 
-                # Convert invoice date to string if it's a datetime object
+                # Convert date
                 if isinstance(invoice_date, datetime):
-                    invoice_date = invoice_date.strftime("%Y-%m-%d")
+                    invoice_date_str = invoice_date.strftime("%d-%b-%Y")
                 elif invoice_date:
-                    invoice_date = str(invoice_date)
+                    invoice_date_str = str(invoice_date)
+                else:
+                    invoice_date_str = ""
                 
+                # Read all GST invoice fields
                 invoice_data = {
-                    "InvoiceNo": str(invoice_no) if invoice_no else "",
-                    "CustomerName": str(customer_name) if customer_name else "",
-                    "PhoneNumber": phone_number if phone_number else "",
-                    "Amount": float(amount) if amount else 0.0,
-                    "InvoiceDate": invoice_date if invoice_date else "",
+                    # Supplier Info
+                    "Logo": self._get_field_value(row, "Logo") or "",
+                    "SupplierName": self._get_field_value(row, "SupplierName") or "",
+                    "SupplierAddress": self._get_field_value(row, "SupplierAddress") or "",
+                    "SupplierGSTIN": self._get_field_value(row, "SupplierGSTIN") or "",
+                    
+                    # Buyer Info
+                    "BuyerName": self._get_field_value(row, "BuyerName") or "",
+                    "BuyerAddress": self._get_field_value(row, "BuyerAddress") or "",
+                    "BuyerGSTIN": self._get_field_value(row, "BuyerGSTIN") or "",
+                    
+                    # Invoice Details
+                    "InvoiceNumber": str(invoice_no),
+                    "InvoiceDate": invoice_date_str,
+                    "Description": self._get_field_value(row, "Description") or "Services Rendered",
+                    "SAC_HSN": self._get_field_value(row, "SAC_HSN") or "",
+                    
+                    # Amounts
+                    "Total": float(self._get_field_value(row, "Total") or 0),
+                    "CGST": float(self._get_field_value(row, "CGST") or 0),
+                    "SGST": float(self._get_field_value(row, "SGST") or 0),
+                    "IGST": float(self._get_field_value(row, "IGST") or 0),
+                    "GrandTotal": float(self._get_field_value(row, "GrandTotal") or 0),
+                    "AmountInWords": self._get_field_value(row, "AmountInWords") or "",
+                    
+                    # Additional Info
+                    "BankDetails": self._get_field_value(row, "BankDetails") or "",
+                    "TermsOfDelivery": self._get_field_value(row, "TermsOfDelivery") or "",
+                    "OtherTerms": self._get_field_value(row, "OtherTerms") or "",
+                    "SignatureField": self._get_field_value(row, "SignatureField") or "",
+                    
+                    # WhatsApp & Status
+                    "PhoneNumber": phone_number or "",
                     "Status": str(status) if status else "Pending",
                     "PaymentReceived": str(payment_received) if payment_received else "",
-                    "RowNumber": row_num  # Store for later updates
+                    
+                    # Internal
+                    "RowNumber": row_num
                 }
+                
+                # Backward compatibility: also set CustomerName and Amount
+                invoice_data["CustomerName"] = invoice_data["BuyerName"]
+                invoice_data["Amount"] = invoice_data["GrandTotal"]
+                invoice_data["InvoiceNo"] = invoice_data["InvoiceNumber"]
                 
                 invoices.append(invoice_data)
             
@@ -120,16 +218,29 @@ class ExcelManager:
         """
         try:
             workbook = openpyxl.load_workbook(self.file_path)
-            sheet = workbook.active
+            
+            # Get data sheet
+            if self.data_sheet_name in workbook.sheetnames:
+                sheet = workbook[self.data_sheet_name]
+            else:
+                sheet = workbook.active
+            
+            status_col = self.column_mapping.get("Status")
+            invoice_col = self.column_mapping.get("InvoiceNumber")
+            
+            if not status_col or not invoice_col:
+                logger.error("Status or InvoiceNumber column not mapped")
+                workbook.close()
+                return False
             
             # Find the row with matching invoice number
             for row_num in range(2, sheet.max_row + 1):
                 row = sheet[row_num]
-                current_invoice_no = str(self._get_cell_value(row, self.COL_INVOICE_NO))
+                current_invoice_no = str(self._get_field_value(row, "InvoiceNumber"))
                 
                 if current_invoice_no == str(invoice_no):
                     # Update status column
-                    sheet.cell(row=row_num, column=self.COL_STATUS, value=status)
+                    sheet.cell(row=row_num, column=status_col, value=status)
                     workbook.save(self.file_path)
                     workbook.close()
                     logger.info(f"Updated status for invoice {invoice_no} to '{status}'")
@@ -156,16 +267,29 @@ class ExcelManager:
         """
         try:
             workbook = openpyxl.load_workbook(self.file_path)
-            sheet = workbook.active
+            
+            # Get data sheet
+            if self.data_sheet_name in workbook.sheetnames:
+                sheet = workbook[self.data_sheet_name]
+            else:
+                sheet = workbook.active
+            
+            payment_col = self.column_mapping.get("PaymentReceived")
+            invoice_col = self.column_mapping.get("InvoiceNumber")
+            
+            if not payment_col or not invoice_col:
+                logger.error("PaymentReceived or InvoiceNumber column not mapped")
+                workbook.close()
+                return False
             
             # Find the row with matching invoice number
             for row_num in range(2, sheet.max_row + 1):
                 row = sheet[row_num]
-                current_invoice_no = str(self._get_cell_value(row, self.COL_INVOICE_NO))
+                current_invoice_no = str(self._get_field_value(row, "InvoiceNumber"))
                 
                 if current_invoice_no == str(invoice_no):
                     # Update payment received column
-                    sheet.cell(row=row_num, column=self.COL_PAYMENT_RECEIVED, value=value)
+                    sheet.cell(row=row_num, column=payment_col, value=value)
                     workbook.save(self.file_path)
                     workbook.close()
                     logger.info(f"Updated payment received for invoice {invoice_no} to '{value}'")
@@ -178,20 +302,3 @@ class ExcelManager:
         except Exception as e:
             logger.error(f"Error updating payment received for invoice {invoice_no}: {str(e)}")
             return False
-    
-    @staticmethod
-    def _get_cell_value(row, col_index: int):
-        """
-        Get cell value from row at given column index.
-        
-        Args:
-            row: openpyxl row object
-            col_index: 1-based column index
-            
-        Returns:
-            Cell value or None
-        """
-        try:
-            return row[col_index - 1].value  # Convert to 0-based index
-        except IndexError:
-            return None

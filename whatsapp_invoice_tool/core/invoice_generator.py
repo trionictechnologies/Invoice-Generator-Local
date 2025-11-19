@@ -77,7 +77,8 @@ class InvoiceGenerator:
             }
             
             # Load and render template
-            template = self.jinja_env.get_template("invoice.html")
+            template_name = self.config.get("invoice_template", "gst_invoice.html")
+            template = self.jinja_env.get_template(template_name)
             html_content = template.render(**template_data)
             
             # Generate PDF filename

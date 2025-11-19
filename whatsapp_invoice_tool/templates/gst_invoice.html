@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proforma Invoice - {{ InvoiceNumber }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 11pt;
+            color: #000;
+            padding: 15mm;
+        }
+        
+        .invoice-container {
+            width: 100%;
+            max-width: 210mm;
+            margin: 0 auto;
+            border: 2px solid #000;
+        }
+        
+        /* Header with Logo and Supplier Info */
+        .header-section {
+            display: table;
+            width: 100%;
+            border-bottom: 2px solid #000;
+        }
+        
+        .logo-section {
+            display: table-cell;
+            width: 30%;
+            padding: 10px;
+            text-align: center;
+            vertical-align: middle;
+            border-right: 2px solid #000;
+        }
+        
+        .logo-placeholder {
+            width: 120px;
+            height: 80px;
+            border: 1px dashed #999;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 10pt;
+        }
+        
+        .supplier-section {
+            display: table-cell;
+            width: 70%;
+            padding: 10px;
+            vertical-align: top;
+        }
+        
+        .supplier-name {
+            font-size: 16pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #000;
+        }
+        
+        .supplier-address {
+            font-size: 10pt;
+            line-height: 1.4;
+            margin-bottom: 5px;
+        }
+        
+        .supplier-gstin {
+            font-size: 10pt;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+        
+        /* Invoice Title */
+        .invoice-title {
+            text-align: center;
+            font-size: 18pt;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-bottom: 2px solid #000;
+        }
+        
+        /* Buyer and Invoice Details */
+        .details-section {
+            display: table;
+            width: 100%;
+            border-bottom: 2px solid #000;
+        }
+        
+        .buyer-section {
+            display: table-cell;
+            width: 60%;
+            padding: 10px;
+            border-right: 2px solid #000;
+            vertical-align: top;
+        }
+        
+        .invoice-details-section {
+            display: table-cell;
+            width: 40%;
+            padding: 10px;
+            vertical-align: top;
+        }
+        
+        .section-label {
+            font-weight: bold;
+            font-size: 11pt;
+            margin-bottom: 5px;
+            text-decoration: underline;
+        }
+        
+        .detail-row {
+            margin: 3px 0;
+            font-size: 10pt;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 140px;
+        }
+        
+        /* Items Table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .items-table th {
+            background-color: #f0f0f0;
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
+            font-size: 10pt;
+            font-weight: bold;
+        }
+        
+        .items-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            font-size: 10pt;
+        }
+        
+        .items-table td.center {
+            text-align: center;
+        }
+        
+        .items-table td.right {
+            text-align: right;
+        }
+        
+        .items-table td.left {
+            text-align: left;
+        }
+        
+        /* Tax Summary */
+        .tax-summary {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0;
+        }
+        
+        .tax-summary td {
+            border: 1px solid #000;
+            padding: 6px 10px;
+            font-size: 10pt;
+        }
+        
+        .tax-summary td.label {
+            text-align: right;
+            font-weight: bold;
+            width: 70%;
+            background-color: #f0f0f0;
+        }
+        
+        .tax-summary td.value {
+            text-align: right;
+            width: 30%;
+        }
+        
+        .grand-total-row {
+            font-weight: bold;
+            font-size: 12pt;
+            background-color: #e0e0e0;
+        }
+        
+        /* Amount in Words */
+        .amount-words {
+            border: 1px solid #000;
+            border-top: none;
+            padding: 8px 10px;
+            font-size: 10pt;
+        }
+        
+        .amount-words strong {
+            font-weight: bold;
+        }
+        
+        /* Bank and Terms Section */
+        .footer-section {
+            display: table;
+            width: 100%;
+            border-top: 2px solid #000;
+        }
+        
+        .bank-section {
+            display: table-cell;
+            width: 60%;
+            padding: 10px;
+            border-right: 2px solid #000;
+            vertical-align: top;
+        }
+        
+        .terms-section {
+            display: table-cell;
+            width: 40%;
+            padding: 10px;
+            vertical-align: top;
+        }
+        
+        .footer-label {
+            font-weight: bold;
+            font-size: 10pt;
+            margin-bottom: 5px;
+            text-decoration: underline;
+        }
+        
+        .footer-content {
+            font-size: 9pt;
+            line-height: 1.5;
+            white-space: pre-line;
+        }
+        
+        /* Signature Section */
+        .signature-section {
+            border-top: 2px solid #000;
+            padding: 10px;
+            text-align: right;
+        }
+        
+        .signature-label {
+            font-weight: bold;
+            margin-top: 40px;
+            font-size: 10pt;
+        }
+        
+        .signature-line {
+            display: inline-block;
+            border-top: 1px solid #000;
+            width: 200px;
+            margin-top: 50px;
+        }
+        
+        /* Print-specific styles */
+        @media print {
+            body {
+                padding: 0;
+            }
+            
+            .invoice-container {
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Header: Logo and Supplier Info -->
+        <div class="header-section">
+            <div class="logo-section">
+                {% if Logo %}
+                <img src="{{ Logo }}" alt="Company Logo" style="max-width: 120px; max-height: 80px;">
+                {% else %}
+                <div class="logo-placeholder">LOGO</div>
+                {% endif %}
+            </div>
+            <div class="supplier-section">
+                <div class="supplier-name">{{ SupplierName }}</div>
+                <div class="supplier-address">{{ SupplierAddress }}</div>
+                <div class="supplier-gstin">GSTIN: {{ SupplierGSTIN }}</div>
+            </div>
+        </div>
+        
+        <!-- Invoice Title -->
+        <div class="invoice-title">
+            PROFORMA INVOICE
+        </div>
+        
+        <!-- Buyer and Invoice Details -->
+        <div class="details-section">
+            <div class="buyer-section">
+                <div class="section-label">Bill To:</div>
+                <div class="detail-row"><strong>{{ BuyerName }}</strong></div>
+                <div class="detail-row">{{ BuyerAddress }}</div>
+                {% if BuyerGSTIN %}
+                <div class="detail-row"><strong>GSTIN:</strong> {{ BuyerGSTIN }}</div>
+                {% endif %}
+            </div>
+            <div class="invoice-details-section">
+                <div class="section-label">Invoice Details:</div>
+                <div class="detail-row">
+                    <span class="detail-label">Invoice No:</span>
+                    <strong>{{ InvoiceNumber }}</strong>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Date:</span>
+                    {{ InvoiceDate }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Items Table -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">S.No</th>
+                    <th style="width: 45%;">Description of Services</th>
+                    <th style="width: 15%;">SAC/HSN</th>
+                    <th style="width: 10%;">Qty</th>
+                    <th style="width: 12.5%;">Rate</th>
+                    <th style="width: 12.5%;">Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="center">1</td>
+                    <td class="left">{{ Description }}</td>
+                    <td class="center">{{ SAC_HSN }}</td>
+                    <td class="center">1</td>
+                    <td class="right">{{ "%.2f"|format(Total) }}</td>
+                    <td class="right">{{ "%.2f"|format(Total) }}</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Tax Summary -->
+        <table class="tax-summary">
+            <tr>
+                <td class="label">Sub Total:</td>
+                <td class="value">₹ {{ "%.2f"|format(Total) }}</td>
+            </tr>
+            {% if CGST > 0 %}
+            <tr>
+                <td class="label">CGST:</td>
+                <td class="value">₹ {{ "%.2f"|format(CGST) }}</td>
+            </tr>
+            {% endif %}
+            {% if SGST > 0 %}
+            <tr>
+                <td class="label">SGST:</td>
+                <td class="value">₹ {{ "%.2f"|format(SGST) }}</td>
+            </tr>
+            {% endif %}
+            {% if IGST > 0 %}
+            <tr>
+                <td class="label">IGST:</td>
+                <td class="value">₹ {{ "%.2f"|format(IGST) }}</td>
+            </tr>
+            {% endif %}
+            <tr class="grand-total-row">
+                <td class="label">GRAND TOTAL:</td>
+                <td class="value">₹ {{ "%.2f"|format(GrandTotal) }}</td>
+            </tr>
+        </table>
+        
+        <!-- Amount in Words -->
+        <div class="amount-words">
+            <strong>Amount in Words:</strong> {{ AmountInWords }}
+        </div>
+        
+        <!-- Bank Details and Terms -->
+        <div class="footer-section">
+            <div class="bank-section">
+                <div class="footer-label">Bank Details:</div>
+                <div class="footer-content">{{ BankDetails }}</div>
+            </div>
+            <div class="terms-section">
+                <div class="footer-label">Terms of Delivery:</div>
+                <div class="footer-content">{{ TermsOfDelivery }}</div>
+                {% if OtherTerms %}
+                <div class="footer-label" style="margin-top: 10px;">Other Terms:</div>
+                <div class="footer-content">{{ OtherTerms }}</div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Signature -->
+        <div class="signature-section">
+            <div class="signature-label">For {{ SupplierName }}</div>
+            <div>
+                {% if SignatureField %}
+                <img src="{{ SignatureField }}" alt="Signature" style="max-width: 150px; max-height: 50px;">
+                {% endif %}
+                <div class="signature-line"></div>
+            </div>
+            <div style="margin-top: 5px; font-size: 9pt;">Authorised Signatory</div>
+        </div>
+    </div>
+</body>
+</html>

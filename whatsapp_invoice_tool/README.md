@@ -4,8 +4,10 @@ A Windows desktop application for automating invoice generation and delivery via
 
 ## Features
 
-- 📊 **Excel Integration**: Read invoice data from Excel files
-- 📄 **PDF Generation**: Create professional invoices from customizable HTML templates
+- 📊 **Excel Integration**: Read invoice data from Excel files with multi-sheet support
+- 📄 **PDF Generation**: Create professional GST-compliant invoices from customizable HTML templates
+- 🧮 **GST Support**: Full Indian GST invoice format with CGST, SGST, IGST
+- 🗺️ **Smart Column Mapping**: Two-sheet Excel structure - easily customize column arrangement
 - 📱 **WhatsApp Automation**: Send invoices automatically via WhatsApp Web
 - 💰 **Payment Tracking**: Monitor WhatsApp messages for payment confirmations
 - 🔄 **Status Updates**: Automatically update Excel with send status and payment confirmations
@@ -52,25 +54,35 @@ A Windows desktop application for automating invoice generation and delivery via
 
 ### 1. Prepare Your Excel File
 
-Create an Excel file with the following columns:
+**NEW: GST Invoice Format Available!**
 
-| Column | Name | Description | Example |
-|--------|------|-------------|---------|
-| A | InvoiceNo | Unique invoice number | INV-001 |
-| B | CustomerName | Customer's name | John Doe |
-| C | PhoneNumber | Phone with country code | 919876543210 |
-| D | Amount | Invoice amount | 5000 |
-| E | InvoiceDate | Invoice date | 2024-01-15 |
-| F | Status | Send status | Pending/Sent |
-| G | PaymentReceived | Payment confirmation | Yes/No/Timestamp |
+The tool now supports professional Indian GST-compliant invoices with **two-sheet Excel structure**:
 
-**Sample Excel file structure:**
+**Option A: GST Invoice Format (Recommended for Indian Businesses)**
+- Use `gst_invoices_template.xlsx`
+- **Sheet 1 (InvoiceData)**: All invoice data with GST details
+- **Sheet 2 (ColumnMapping)**: Maps fields to columns (customize column arrangement!)
+- Includes: CGST, SGST, IGST, GSTIN, SAC/HSN, and more
+- See `GST_INVOICE_GUIDE.md` for complete documentation
 
+**Option B: Simple Format (Basic Invoices)**
+- Use `sample_invoices.xlsx`
+- Quick and easy for non-GST invoices
+
+**GST Format Fields (24 total):**
+- Supplier Info: Name, Address, GSTIN, Logo
+- Buyer Info: Name, Address, GSTIN
+- Invoice Details: Number, Date, Description, SAC/HSN
+- Amounts: Total, CGST, SGST, IGST, Grand Total
+- Payment: Bank Details, Terms, Phone Number
+- Auto-updated: Status, Payment Received
+
+**Basic Format Fields (7 columns):**
 ```
-InvoiceNo | CustomerName | PhoneNumber   | Amount | InvoiceDate | Status  | PaymentReceived
-INV-001   | John Doe     | 919876543210  | 5000   | 2024-01-15  | Pending |
-INV-002   | Jane Smith   | 919876543211  | 7500   | 2024-01-15  | Pending |
+InvoiceNo | CustomerName | PhoneNumber | Amount | InvoiceDate | Status | PaymentReceived
 ```
+
+📖 **For detailed GST format guide, see:** `GST_INVOICE_GUIDE.md`
 
 ### 2. Configure the Application
 
